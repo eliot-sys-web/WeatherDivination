@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Météo du Passé 🌤️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .weather-result {
+            display: none;
+            margin-top: 30px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .weather-header {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .weather-icon {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+
+        .date-display {
+            font-size: 1.3em;
+            margin-bottom: 5px;
+        }
+
+        .location {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .temperature {
+            font-size: 3.5em;
+            font-weight: bold;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .weather-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .weather-card:hover {
+            transform: scale(1.05);
+        }
+
+        .weather-card-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .weather-card-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .weather-card-value {
+            color: #333;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 1em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="formSection">
+            <h1>🌤️ Météo du Passé</h1>
+            <p class="subtitle">Découvrez le temps qu'il faisait à une date particulière</p>
+            
+            <form id="weatherForm">
+                <div class="form-group">
+                    <label for="day">📅 Jour</label>
+                    <select id="day" required>
+                        <option value="">Choisissez un jour</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="month">📆 Mois</label>
+                    <select id="month" required>
+                        <option value="">Choisissez un mois</option>
+                        <option value="1">Janvier</option>
+                        <option value="2">Février</option>
+                        <option value="3">Mars</option>
+                        <option value="4">Avril</option>
+                        <option value="5">Mai</option>
+                        <option value="6">Juin</option>
+                        <option value="7">Juillet</option>
+                        <option value="8">Août</option>
+                        <option value="9">Septembre</option>
+                        <option value="10">Octobre</option>
+                        <option value="11">Novembre</option>
+                        <option value="12">Décembre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="year">🗓️ Année</label>
+                    <input type="number" id="year" min="1900" max="2024" required placeholder="Ex: 1990">
+                </div>
+
+                <div class="form-group">
+                    <label for="city">🏙️ Ville</label>
+                    <input type="text" id="city" required placeholder="Ex: Paris">
+                </div>
+
+                <button type="submit">✨ Découvrir la météo</button>
+            </form>
+        </div>
+
+        <div id="weatherResult" class="weather-result">
+            <div class="weather-header">
+                <div class="weather-icon" id="mainIcon">🌤️</div>
+                <div class="date-display" id="dateDisplay"></div>
+                <div class="location" id="locationDisplay"></div>
+                <div class="temperature" id="temperature"></div>
+                <div id="weatherDescription"></div>
+            </div>
+
+            <div class="weather-grid">
+                <div class="weather-card">
+                    <div class="weather-card-icon">💨</div>
+                    <div class="weather-card-label">Vent</div>
+                    <div class="weather-card-value" id="wind"></div>
+                </div>
+
+                <div class="weather-card">
+                    <div class="weather-card-icon">💧</div>
+                    <div class="weather-card-label">Humidité</div>
+                    <div class="weather-card-value" id="humidity"></div>
+                </div>
+
+                <div class="weather-card">
+                    <div class="weather-card-icon">🌡️</div>
+                    <div class="weather-card-label">Ressenti</div>
+                    <div class="weather-card-value" id="feelsLike"></div>
+                </div>
+
+                <div class="weather-card">
+                    <div class="weather-card-icon">☔</div>
+                    <div class="weather-card-label">Précipitations</div>
+                    <div class="weather-card-value" id="precipitation"></div>
+                </div>
+            </div>
+
+            <button class="back-button" onclick="goBack()">🔙 Nouvelle recherche</button>
+        </div>
+    </div>
+
+    <script>
+        // Remplir les jours
+        const daySelect = document.getElementById('day');
+        for (let i = 1; i <= 31; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            daySelect.appendChild(option);
+        }
+
+        // Générer des données météo cohérentes basées sur la date et la ville
+        function generateWeather(day, month, year, city) {
+            // Utiliser la date et la ville pour créer une "seed" pour la génération
+            const seed = city.length + day + month * 100 + (year % 100);
+            
+            // Fonction pour générer un nombre pseudo-aléatoire basé sur la seed
+            function seededRandom(min, max, offset = 0) {
+                const x = Math.sin(seed + offset) * 10000;
+                return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+            }
+
+            // Températures selon la saison (hémisphère nord)
+            let baseTemp;
+            if (month >= 12 || month <= 2) { // Hiver
+                baseTemp = seededRandom(-5, 8);
+            } else if (month >= 3 && month <= 5) { // Printemps
+                baseTemp = seededRandom(10, 20);
+            } else if (month >= 6 && month <= 8) { // Été
+                baseTemp = seededRandom(20, 35);
+            } else { // Automne
+                baseTemp = seededRandom(8, 18);
+            }
+
+            // Conditions météo
+            const conditions = [
+                { icon: '☀️', desc: 'Ensoleillé', rain: 0 },
+                { icon: '⛅', desc: 'Partiellement nuageux', rain: 0 },
+                { icon: '☁️', desc: 'Nuageux', rain: seededRandom(0, 2) },
+                { icon: '🌧️', desc: 'Pluie', rain: seededRandom(3, 15) },
+                { icon: '⛈️', desc: 'Orageux', rain: seededRandom(10, 30) },
+                { icon: '🌤️', desc: 'Éclaircies', rain: 0 }
+            ];
+
+            const conditionIndex = seededRandom(0, conditions.length - 1, 100);
+            const condition = conditions[conditionIndex];
+
+            // Si hiver et température basse, possibilité de neige
+            if (baseTemp < 2 && (month >= 12 || month <= 2)) {
+                if (seededRandom(0, 1, 200) === 1) {
+                    condition.icon = '❄️';
+                    condition.desc = 'Neige';
+                    condition.rain = seededRandom(2, 10);
+                }
+            }
+
+            return {
+                temperature: baseTemp,
+                feelsLike: baseTemp + seededRandom(-3, 3, 150),
+                wind: seededRandom(5, 40, 250),
+                humidity: seededRandom(30, 90, 300),
+                precipitation: condition.rain,
+                icon: condition.icon,
+                description: condition.desc
+            };
+        }
+
+        document.getElementById('weatherForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const day = parseInt(document.getElementById('day').value);
+            const month = parseInt(document.getElementById('month').value);
+            const year = parseInt(document.getElementById('year').value);
+            const city = document.getElementById('city').value;
+
+            // Générer la météo
+            const weather = generateWeather(day, month, year, city);
+
+            // Formater la date
+            const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                              'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            const dateString = `${day} ${monthNames[month - 1]} ${year}`;
+
+            // Afficher les résultats
+            document.getElementById('mainIcon').textContent = weather.icon;
+            document.getElementById('dateDisplay').textContent = dateString;
+            document.getElementById('locationDisplay').textContent = city;
+            document.getElementById('temperature').textContent = `${weather.temperature}°C`;
+            document.getElementById('weatherDescription').textContent = weather.description;
+            document.getElementById('wind').textContent = `${weather.wind} km/h`;
+            document.getElementById('humidity').textContent = `${weather.humidity}%`;
+            document.getElementById('feelsLike').textContent = `${weather.feelsLike}°C`;
+            document.getElementById('precipitation').textContent = `${weather.precipitation} mm`;
+
+            // Cacher le formulaire et afficher les résultats
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('weatherResult').style.display = 'block';
+        });
+
+        function goBack() {
+            document.getElementById('formSection').style.display = 'block';
+            document.getElementById('weatherResult').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -25,7 +25,7 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 30px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             animation: fadeIn 0.5s ease-in;
@@ -149,42 +149,46 @@
             margin-bottom: 10px;
         }
 
-        .temperature {
+        .temperature-main {
             font-size: 3.5em;
             font-weight: bold;
         }
 
-        .weather-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+        .weather-info-list {
             margin-top: 20px;
         }
 
-        .weather-card {
+        .weather-info-item {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             padding: 20px;
             border-radius: 15px;
-            text-align: center;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             transition: transform 0.2s ease;
         }
 
-        .weather-card:hover {
-            transform: scale(1.05);
+        .weather-info-item:hover {
+            transform: translateX(5px);
         }
 
-        .weather-card-icon {
+        .weather-info-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .weather-info-icon {
             font-size: 2em;
-            margin-bottom: 10px;
         }
 
-        .weather-card-label {
+        .weather-info-label {
             color: #666;
-            font-size: 0.9em;
-            margin-bottom: 5px;
+            font-size: 1em;
         }
 
-        .weather-card-value {
+        .weather-info-value {
             color: #333;
             font-size: 1.5em;
             font-weight: 600;
@@ -206,8 +210,10 @@
                 font-size: 2em;
             }
 
-            .weather-grid {
-                grid-template-columns: 1fr;
+            .weather-info-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
             }
         }
     </style>
@@ -264,34 +270,12 @@
                 <div class="weather-icon" id="mainIcon">🌤️</div>
                 <div class="date-display" id="dateDisplay"></div>
                 <div class="location" id="locationDisplay"></div>
-                <div class="temperature" id="temperature"></div>
+                <div class="temperature-main" id="temperatureMain"></div>
                 <div id="weatherDescription"></div>
             </div>
 
-            <div class="weather-grid">
-                <div class="weather-card">
-                    <div class="weather-card-icon">💨</div>
-                    <div class="weather-card-label">Vent</div>
-                    <div class="weather-card-value" id="wind"></div>
-                </div>
-
-                <div class="weather-card">
-                    <div class="weather-card-icon">💧</div>
-                    <div class="weather-card-label">Humidité</div>
-                    <div class="weather-card-value" id="humidity"></div>
-                </div>
-
-                <div class="weather-card">
-                    <div class="weather-card-icon">🌡️</div>
-                    <div class="weather-card-label">Ressenti</div>
-                    <div class="weather-card-value" id="feelsLike"></div>
-                </div>
-
-                <div class="weather-card">
-                    <div class="weather-card-icon">☔</div>
-                    <div class="weather-card-label">Précipitations</div>
-                    <div class="weather-card-value" id="precipitation"></div>
-                </div>
+            <div class="weather-info-list" id="weatherInfoList">
+                <!-- Les informations seront insérées ici dynamiquement -->
             </div>
 
             <button class="back-button" onclick="goBack()">🔙 Nouvelle recherche</button>
@@ -308,59 +292,142 @@
             daySelect.appendChild(option);
         }
 
-        // Générer des données météo cohérentes basées sur la date et la ville
+        // Définition des types d'informations pour le codage
+        const monthInfoTypes = [
+            { id: 'temperature', icon: '🌡️', label: 'Température', unit: '°C', position: 1 },
+            { id: 'feelsLike', icon: '🌡️', label: 'Température ressentie', unit: '°C', position: 2 },
+            { id: 'humidity', icon: '💧', label: 'Taux d\'humidité', unit: '%', position: 3 },
+            { id: 'wind', icon: '💨', label: 'Vitesse du vent', unit: 'km/h', position: 4 },
+            { id: 'precipitation', icon: '☔', label: 'Précipitations', unit: 'mm', position: 5 },
+            { id: 'pressure', icon: '🔽', label: 'Pression atmosphérique', unit: 'hPa', position: 6 }
+        ];
+
+        const dayInfoTypes = [
+            { id: 'uv', icon: '☀️', label: 'Indice UV', unit: '', position: 1 },
+            { id: 'sunrise', icon: '🌅', label: 'Lever du soleil', unit: '', position: 2 },
+            { id: 'sunset', icon: '🌇', label: 'Coucher du soleil', unit: '', position: 3 },
+            { id: 'rain', icon: '🌧️', label: 'Pluie', unit: 'mm', position: 4 },
+            { id: 'visibility', icon: '👁️', label: 'Visibilité', unit: 'km', position: 5 },
+            { id: 'airQuality', icon: '🍃', label: 'Qualité de l\'air', unit: '', position: 6 },
+            { id: 'moon', icon: '🌙', label: 'Phase lunaire', unit: '', position: 7 },
+            { id: 'cloudCover', icon: '☁️', label: 'Couverture nuageuse', unit: '%', position: 8 }
+        ];
+
         function generateWeather(day, month, year, city) {
-            // Utiliser la date et la ville pour créer une "seed" pour la génération
             const seed = city.length + day + month * 100 + (year % 100);
             
-            // Fonction pour générer un nombre pseudo-aléatoire basé sur la seed
             function seededRandom(min, max, offset = 0) {
                 const x = Math.sin(seed + offset) * 10000;
                 return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
             }
 
-            // Températures selon la saison (hémisphère nord)
+            // Températures selon la saison
             let baseTemp;
-            if (month >= 12 || month <= 2) { // Hiver
+            if (month >= 12 || month <= 2) {
                 baseTemp = seededRandom(-5, 8);
-            } else if (month >= 3 && month <= 5) { // Printemps
+            } else if (month >= 3 && month <= 5) {
                 baseTemp = seededRandom(10, 20);
-            } else if (month >= 6 && month <= 8) { // Été
+            } else if (month >= 6 && month <= 8) {
                 baseTemp = seededRandom(20, 35);
-            } else { // Automne
+            } else {
                 baseTemp = seededRandom(8, 18);
             }
 
-            // Conditions météo
             const conditions = [
-                { icon: '☀️', desc: 'Ensoleillé', rain: 0 },
-                { icon: '⛅', desc: 'Partiellement nuageux', rain: 0 },
-                { icon: '☁️', desc: 'Nuageux', rain: seededRandom(0, 2) },
-                { icon: '🌧️', desc: 'Pluie', rain: seededRandom(3, 15) },
-                { icon: '⛈️', desc: 'Orageux', rain: seededRandom(10, 30) },
-                { icon: '🌤️', desc: 'Éclaircies', rain: 0 }
+                { icon: '☀️', desc: 'Ensoleillé' },
+                { icon: '⛅', desc: 'Partiellement nuageux' },
+                { icon: '☁️', desc: 'Nuageux' },
+                { icon: '🌧️', desc: 'Pluie' },
+                { icon: '⛈️', desc: 'Orageux' },
+                { icon: '🌤️', desc: 'Éclaircies' }
             ];
 
             const conditionIndex = seededRandom(0, conditions.length - 1, 100);
             const condition = conditions[conditionIndex];
 
-            // Si hiver et température basse, possibilité de neige
             if (baseTemp < 2 && (month >= 12 || month <= 2)) {
                 if (seededRandom(0, 1, 200) === 1) {
                     condition.icon = '❄️';
                     condition.desc = 'Neige';
-                    condition.rain = seededRandom(2, 10);
                 }
             }
+
+            // Calcul de l'heure de lever/coucher du soleil
+            const sunriseHour = 6 + Math.floor((month - 1) / 2);
+            const sunriseMinute = seededRandom(0, 59, 400);
+            const sunsetHour = 18 + Math.floor((6 - month) / 2);
+            const sunsetMinute = seededRandom(0, 59, 500);
+
+            // Phase lunaire
+            const moonPhases = ['🌑 Nouvelle lune', '🌒 Premier croissant', '🌓 Premier quartier', '🌔 Gibbeuse croissante', 
+                              '🌕 Pleine lune', '🌖 Gibbeuse décroissante', '🌗 Dernier quartier', '🌘 Dernier croissant'];
+            const moonPhase = moonPhases[seededRandom(0, 7, 600)];
+
+            // Qualité de l'air
+            const airQualities = ['Excellente', 'Bonne', 'Moyenne', 'Médiocre', 'Mauvaise'];
+            const airQuality = airQualities[seededRandom(0, 4, 700)];
 
             return {
                 temperature: baseTemp,
                 feelsLike: baseTemp + seededRandom(-3, 3, 150),
                 wind: seededRandom(5, 40, 250),
                 humidity: seededRandom(30, 90, 300),
-                precipitation: condition.rain,
+                precipitation: seededRandom(0, 30, 350),
+                pressure: seededRandom(980, 1030, 450),
+                uv: seededRandom(1, 11, 500),
+                sunrise: `${sunriseHour.toString().padStart(2, '0')}:${sunriseMinute.toString().padStart(2, '0')}`,
+                sunset: `${sunsetHour.toString().padStart(2, '0')}:${sunsetMinute.toString().padStart(2, '0')}`,
+                rain: seededRandom(0, 25, 550),
+                visibility: seededRandom(2, 20, 600),
+                airQuality: airQuality,
+                moon: moonPhase,
+                cloudCover: seededRandom(0, 100, 650),
                 icon: condition.icon,
                 description: condition.desc
+            };
+        }
+
+        function determineInfoOrder(day, month, year) {
+            // Déterminer quelle info pour le mois doit être en position 1 ou 2
+            let monthInfoPosition;
+            let monthInfoIndex;
+            
+            if (month <= 6) {
+                // Mois 1-6 : en position 1
+                monthInfoPosition = 0;
+                monthInfoIndex = month - 1;
+            } else {
+                // Mois 7-12 : en position 2 (indices 0,1,2,3,4,5 correspondent à mois 7,8,9,10,11,12)
+                monthInfoPosition = 1;
+                monthInfoIndex = (month / 2) - 1;
+                // Mois 8 -> index 3, mois 10 -> index 4, mois 12 -> index 5
+                // Mois 7 -> 3.5 -> 2.5 -> 2 (arrondi)
+                monthInfoIndex = Math.floor(month / 2) - 1;
+            }
+
+            // Déterminer le suffixe selon la tranche du jour
+            let suffix = '';
+            if (day >= 1 && day <= 8) suffix = '';
+            else if (day >= 9 && day <= 16) suffix = ' minimal';
+            else if (day >= 17 && day <= 24) suffix = ' moyen';
+            else if (day >= 25 && day <= 31) suffix = ' maximal';
+
+            // Déterminer quelle info secondaire pour le jour précis
+            let dayInfoIndex;
+            if (month <= 6) {
+                // 1ère moitié : utiliser la 1ère info secondaire
+                dayInfoIndex = ((day - 1) % 8);
+            } else {
+                // 2ème moitié : utiliser la 2ème info secondaire
+                dayInfoIndex = ((day - 1) % 8);
+            }
+
+            return {
+                monthInfoIndex,
+                monthInfoPosition,
+                suffix,
+                dayInfoIndex,
+                useFirstDayInfo: month <= 6
             };
         }
 
@@ -372,24 +439,102 @@
             const year = parseInt(document.getElementById('year').value);
             const city = document.getElementById('city').value;
 
-            // Générer la météo
             const weather = generateWeather(day, month, year, city);
+            const orderInfo = determineInfoOrder(day, month, year);
 
             // Formater la date
             const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
                               'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
             const dateString = `${day} ${monthNames[month - 1]} ${year}`;
 
-            // Afficher les résultats
+            // Afficher l'en-tête
             document.getElementById('mainIcon').textContent = weather.icon;
             document.getElementById('dateDisplay').textContent = dateString;
             document.getElementById('locationDisplay').textContent = city;
-            document.getElementById('temperature').textContent = `${weather.temperature}°C`;
+            document.getElementById('temperatureMain').textContent = `${weather.temperature}°C`;
             document.getElementById('weatherDescription').textContent = weather.description;
-            document.getElementById('wind').textContent = `${weather.wind} km/h`;
-            document.getElementById('humidity').textContent = `${weather.humidity}%`;
-            document.getElementById('feelsLike').textContent = `${weather.feelsLike}°C`;
-            document.getElementById('precipitation').textContent = `${weather.precipitation} mm`;
+
+            // Créer la liste ordonnée des informations
+            const infoList = document.getElementById('weatherInfoList');
+            infoList.innerHTML = '';
+
+            // Créer un tableau pour ordonner les infos
+            let orderedInfos = [];
+
+            // Ajouter les infos de mois
+            monthInfoTypes.forEach((info, index) => {
+                let label = info.label;
+                let value = weather[info.id];
+                
+                // Ajouter le suffixe si c'est l'info qui code le mois
+                if (index === orderInfo.monthInfoIndex) {
+                    label += orderInfo.suffix;
+                }
+                
+                let position = index === orderInfo.monthInfoIndex ? orderInfo.monthInfoPosition : 
+                              (index < orderInfo.monthInfoIndex || (orderInfo.monthInfoPosition === 1 && index === 0)) ? 
+                              index + 2 : index + 2 + (orderInfo.monthInfoPosition === 0 ? 1 : 0);
+                
+                orderedInfos.push({
+                    position: position,
+                    icon: info.icon,
+                    label: label,
+                    value: value + info.unit
+                });
+            });
+
+            // Ajouter les infos du jour
+            dayInfoTypes.forEach((info, index) => {
+                let value;
+                switch(info.id) {
+                    case 'uv': value = weather.uv; break;
+                    case 'sunrise': value = weather.sunrise; break;
+                    case 'sunset': value = weather.sunset; break;
+                    case 'rain': value = weather.rain + info.unit; break;
+                    case 'visibility': value = weather.visibility + info.unit; break;
+                    case 'airQuality': value = weather.airQuality; break;
+                    case 'moon': value = weather.moon; break;
+                    case 'cloudCover': value = weather.cloudCover + info.unit; break;
+                }
+                
+                // Déterminer la position selon si on utilise la 1ère ou 2ème info
+                let basePosition = 8;
+                let offset = index;
+                
+                // L'info qui code est mise à une position spécifique
+                if (index === orderInfo.dayInfoIndex) {
+                    if (orderInfo.useFirstDayInfo) {
+                        // 1ère info secondaire : juste après les infos de mois
+                        offset = -6;
+                    } else {
+                        // 2ème info secondaire : position 7 (après la 1ère info secondaire)
+                        offset = -5;
+                    }
+                }
+                
+                orderedInfos.push({
+                    position: basePosition + offset,
+                    icon: info.icon,
+                    label: info.label,
+                    value: value
+                });
+            });
+
+            // Trier et afficher
+            orderedInfos.sort((a, b) => a.position - b.position);
+
+            orderedInfos.forEach(info => {
+                const item = document.createElement('div');
+                item.className = 'weather-info-item';
+                item.innerHTML = `
+                    <div class="weather-info-left">
+                        <div class="weather-info-icon">${info.icon}</div>
+                        <div class="weather-info-label">${info.label}</div>
+                    </div>
+                    <div class="weather-info-value">${info.value}</div>
+                `;
+                infoList.appendChild(item);
+            });
 
             // Cacher le formulaire et afficher les résultats
             document.getElementById('formSection').style.display = 'none';
